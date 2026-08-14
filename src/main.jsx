@@ -20,6 +20,14 @@ const products = [
 
 const fmt = n => `৳ ${n.toLocaleString('en-BD')}.00`
 
+const tryOnModels = [
+  { id: 'fair', name: 'Fair', src: '/assets/model-fair.png' },
+  { id: 'light', name: 'Light', src: '/assets/model-light.png' },
+  { id: 'medium', name: 'Medium', src: '/assets/model-medium.png' },
+  { id: 'tan', name: 'Tan', src: '/assets/model-tan.png' },
+  { id: 'deep', name: 'Deep', src: '/assets/model-deep.png' },
+]
+
 function ProductArt({ type, mini=false }) {
   return <div className={`product-art ${type} ${mini ? 'mini' : ''}`} aria-hidden="true"><i/><b/><span/></div>
 }
@@ -30,7 +38,7 @@ function Header({ cart, openTryOn }) {
     <div className="announcement">Free delivery on orders over ৳ 3,000 <span>•</span> Authentic products, always</div>
     <header>
       <button className="icon-btn menu-btn" onClick={() => setMenu(!menu)} aria-label="Menu"><Menu/></button>
-      <a href="#" className="logo"><span>go go</span><strong>GORGEOUS</strong><em>BEAUTY, MADE PERSONAL</em></a>
+      <a href="#" className="logo"><span>Go Go</span><strong>GORGEOUS</strong><em>BEAUTY, MADE PERSONAL</em></a>
       <div className="search"><Search/><input placeholder="Search your beauty favourites..."/></div>
       <div className="header-actions"><button><User/><span>Sign in</span></button><button><Heart/><span>Wishlist</span></button><button className="bag"><ShoppingBag/><span>Bag</span>{cart > 0 && <b>{cart}</b>}</button></div>
     </header>
@@ -67,6 +75,7 @@ function TryOn({ product: initial, onClose }) {
   const [product, setProduct] = useState(initial || products[0])
   const [shade, setShade] = useState((initial || products[0]).shades[0])
   const [mode, setMode] = useState('model')
+  const [selectedModel, setSelectedModel] = useState(tryOnModels[2])
   const [intensity, setIntensity] = useState(68)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -81,17 +90,17 @@ function TryOn({ product: initial, onClose }) {
     if(product.category==='concealer'){drawPath(ctx,pts,faceOval,w,h);ctx.clip();const grad=ctx.createRadialGradient(w*.5,h*.45,0,w*.5,h*.45,w*.4);grad.addColorStop(0,shade.c+'cc');grad.addColorStop(1,shade.c+'00');ctx.fillStyle=grad;ctx.globalAlpha=.22*alpha;ctx.fillRect(0,0,w,h)} ctx.restore()
   }
   const ensureModel=async()=>{if(landmarkerRef.current)return landmarkerRef.current;setLoading(true);try{const {FaceLandmarker,FilesetResolver}=await import('@mediapipe/tasks-vision');const vision=await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22-rc.20250304/wasm');landmarkerRef.current=await FaceLandmarker.createFromOptions(vision,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:'GPU'},runningMode:'IMAGE',numFaces:1});return landmarkerRef.current}catch(e){setError('Face model could not load. Check your connection and try again.');throw e}finally{setLoading(false)}}
-  const processImage=async(img)=>{const lm=await ensureModel();const res=lm.detect(img);const c=canvasRef.current;if(!c)return;c.width=img.naturalWidth||img.videoWidth;c.height=img.naturalHeight||img.videoHeight;const ctx=c.getContext('2d');ctx.drawImage(img,0,0,c.width,c.height);if(res.faceLandmarks?.[0])renderMakeup(ctx,res.faceLandmarks[0],c.width,c.height);else setError('Move closer or choose a clear, front-facing photo.')}
+  const processImage=async(img)=>{const lm=await ensureModel();const res=lm.detect(img);const c=canvasRef.current;if(!c)return;const sourceW=img.naturalWidth||img.videoWidth,sourceH=img.naturalHeight||img.videoHeight;c.width=1600;c.height=900;const scale=Math.min(c.width/sourceW,c.height/sourceH),drawW=sourceW*scale,drawH=sourceH*scale,offsetX=(c.width-drawW)/2,offsetY=(c.height-drawH)/2,ctx=c.getContext('2d');ctx.fillStyle='#eadfdb';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,offsetX,offsetY,drawW,drawH);if(res.faceLandmarks?.[0]){const fitted=res.faceLandmarks[0].map(p=>({...p,x:(offsetX+p.x*drawW)/c.width,y:(offsetY+p.y*drawH)/c.height}));renderMakeup(ctx,fitted,c.width,c.height)}else setError('Move closer or choose a clear, front-facing photo.')}
   const startCamera=async()=>{setMode('camera');setError('');try{streamRef.current=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280}},audio:false});setTimeout(async()=>{const v=videoRef.current;if(!v)return;v.srcObject=streamRef.current;await v.play();const lm=await ensureModel();await lm.setOptions({runningMode:'VIDEO'});const loop=()=>{if(!videoRef.current||!canvasRef.current)return;const c=canvasRef.current,ctx=c.getContext('2d'),v=videoRef.current;if(v.videoWidth){c.width=v.videoWidth;c.height=v.videoHeight;ctx.save();ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(v,0,0,c.width,c.height);ctx.restore();const res=lm.detectForVideo(v,performance.now());if(res.faceLandmarks?.[0]){const mirrored=res.faceLandmarks[0].map(p=>({...p,x:1-p.x}));renderMakeup(ctx,mirrored,c.width,c.height)}}rafRef.current=requestAnimationFrame(loop)};loop()},50)}catch(e){setError('Camera access was blocked. Allow camera permission or upload a photo.') }}
   const chooseMode=m=>{cancelAnimationFrame(rafRef.current);streamRef.current?.getTracks().forEach(t=>t.stop());setMode(m);setError('');if(m==='model')setTimeout(()=>imageRef.current&&processImage(imageRef.current),20);if(m==='camera')startCamera()}
   const upload=e=>{const file=e.target.files?.[0];if(!file)return;chooseMode('upload');const url=URL.createObjectURL(file);setTimeout(()=>{imageRef.current.src=url},0)}
-  useEffect(()=>{if(mode==='model'&&imageRef.current?.complete)processImage(imageRef.current)},[product,shade,intensity])
+  useEffect(()=>{if(mode==='model'&&imageRef.current?.complete)processImage(imageRef.current)},[product,shade,intensity,selectedModel])
   useEffect(()=>()=>{cancelAnimationFrame(rafRef.current);streamRef.current?.getTracks().forEach(t=>t.stop());landmarkerRef.current?.close()},[])
 
   return <div className="try-overlay" role="dialog" aria-modal="true"><div className="try-modal"><button className="modal-close" onClick={onClose}><X/></button>
-    <aside><a className="logo compact"><span>go go</span><strong>GORGEOUS</strong></a><span className="try-label"><Sparkles/> VIRTUAL TRY-ON</span><h2>Find your<br/><i>perfect look.</i></h2><p>Choose a product and shade, then see it come alive instantly.</p><div className="try-products">{categories.map(c=>{const p=products.find(x=>x.category===c.id);return <button className={product.category===c.id?'active':''} onClick={()=>switchProduct(p)} key={c.id}><ProductArt type={c.art} mini/><span>{c.label}<small>{products.filter(x=>x.category===c.id).length} products</small></span></button>})}</div><div className="privacy">🔒 Your camera and photos stay on this device.</div></aside>
+    <aside><a className="logo compact"><span>Go Go</span><strong>GORGEOUS</strong></a><span className="try-label"><Sparkles/> VIRTUAL TRY-ON</span><h2>Find your<br/><i>perfect look.</i></h2><p>Choose a product and shade, then see it come alive instantly.</p><div className="try-products">{categories.map(c=>{const p=products.find(x=>x.category===c.id);return <button className={product.category===c.id?'active':''} onClick={()=>switchProduct(p)} key={c.id}><ProductArt type={c.art} mini/><span>{c.label}<small>{products.filter(x=>x.category===c.id).length} products</small></span></button>})}</div><div className="privacy">🔒 Your camera and photos stay on this device.</div></aside>
     <main><div className="mode-tabs"><button className={mode==='model'?'active':''} onClick={()=>chooseMode('model')}><User/> Model</button><label className={mode==='upload'?'active':''}><Upload/> Upload<input type="file" accept="image/*" onChange={upload}/></label><button className={mode==='camera'?'active':''} onClick={startCamera}><Camera/> Live camera</button></div>
-      <div className="try-stage">{mode==='camera'&&<video ref={videoRef} muted playsInline/>}<img ref={imageRef} className="source-image" src="/assets/gorgeous-hero.png" onLoad={()=>mode!=='camera'&&processImage(imageRef.current)} alt="Try-on model"/><canvas ref={canvasRef}/>{loading&&<div className="stage-status"><span/>Loading face intelligence…</div>}{error&&<div className="stage-error">{error}</div>}<span className="live-pill"><i/> {mode==='camera'?'LIVE':'AI PREVIEW'}</span><button className="zoom"><ZoomIn/></button></div>
+      <div className="try-stage">{mode==='camera'&&<video ref={videoRef} muted playsInline/>}<img ref={imageRef} className="source-image" src={selectedModel.src} onLoad={()=>mode!=='camera'&&processImage(imageRef.current)} alt={`${selectedModel.name} skin tone try-on model`}/><canvas ref={canvasRef}/>{mode==='model'&&<div className="model-picker"><span>Choose model</span>{tryOnModels.map(model=><button key={model.id} className={selectedModel.id===model.id?'active':''} onClick={()=>setSelectedModel(model)} title={`${model.name} skin tone`}><img src={model.src} alt=""/><small>{model.name}</small></button>)}</div>}{loading&&<div className="stage-status"><span/>Loading face intelligence…</div>}{error&&<div className="stage-error">{error}</div>}<span className="live-pill"><i/> {mode==='camera'?'LIVE':'AI PREVIEW'}</span><button className="zoom"><ZoomIn/></button></div>
       <div className="try-controls"><div className="selected"><ProductArt type={product.art} mini/><div><small>{product.brand}</small><strong>{product.name}</strong><span>{fmt(product.price)}</span></div></div><div className="shade-picker"><div><strong>Choose your shade</strong><span>{shade.n}</span></div><div className="swatches">{product.shades.map(s=><button key={s.n} className={shade.n===s.n?'active':''} style={{'--shade':s.c}} onClick={()=>setShade(s)} title={s.n}/>)}</div><label>Intensity <input type="range" min="20" max="100" value={intensity} onChange={e=>setIntensity(+e.target.value)}/><span>{intensity}%</span></label></div><button className="add try-add">Add to bag <ShoppingBag/></button></div>
     </main></div></div>
 }
@@ -104,7 +113,7 @@ function App(){
     <section className="trust"><div><b>100%</b><span>Authentic products</span></div><div><b>24h</b><span>Dhaka delivery</span></div><div><b>4.9★</b><span>Loved by thousands</span></div><div><b>Easy</b><span>Returns & exchange</span></div></section>
     <section className="shop" id="shop"><div className="section-head"><span className="eyebrow">CURATED FOR YOU</span><h2>Meet your new <i>beauty favourites.</i></h2><p>Three essentials. Endless possibilities. Try every shade before you choose.</p></div><div className="filters"><button className={filter==='all'?'active':''} onClick={()=>setFilter('all')}>Shop all</button>{categories.map(c=><button key={c.id} className={filter===c.id?'active':''} onClick={()=>setFilter(c.id)}>{c.label}</button>)}</div><div className="products">{shown.map(p=><ProductCard key={p.id} product={p} onTry={openTry} onAdd={add}/>)}</div></section>
     <section className="try-banner"><div><span className="eyebrow">NO GUESSING. JUST GLOWING.</span><h2>Your face.<br/>Every shade.<br/><i>One perfect match.</i></h2><p>Our virtual try-on maps makeup to your unique features in real time.</p><button className="primary" onClick={()=>openTry()}>Start trying <Sparkles/></button></div><div className="face-card"><img src="/assets/gorgeous-hero.png" alt="Virtual makeup preview"/><span>LIPSTICK • INTERVIEW</span><div className="scan-line"/></div></section>
-    <footer id="about"><a className="logo"><span>go go</span><strong>GORGEOUS</strong><em>BEAUTY, MADE PERSONAL</em></a><p>Authentic beauty, thoughtfully curated for Bangladesh.</p><div><a href="#shop">Shop</a><a href="#about">About us</a><a href="#">Contact</a><a href="#">Privacy</a></div><small>© 2026 Go Go Gorgeous. Prototype experience.</small></footer>
+    <footer id="about"><a className="logo"><span>Go Go</span><strong>GORGEOUS</strong><em>BEAUTY, MADE PERSONAL</em></a><p>Authentic beauty, thoughtfully curated for Bangladesh.</p><div><a href="#shop">Shop</a><a href="#about">About us</a><a href="#">Contact</a><a href="#">Privacy</a></div><small>© 2026 Go Go Gorgeous. Prototype experience.</small></footer>
     {tryProduct&&<TryOn product={tryProduct} onClose={()=>setTryProduct(null)}/>} {toast&&<div className="toast">✓ {toast}</div>}
   </>
 }
