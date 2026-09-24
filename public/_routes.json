@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "include": ["/models/face-parsing-resnet18.onnx"],
+  "exclude": []
+}
