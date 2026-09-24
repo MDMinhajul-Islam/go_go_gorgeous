@@ -1,4 +1,5 @@
 import * as ort from 'onnxruntime-web'
+import { computeLetterbox } from './try-on/core/geometry.js'
 
 const SIZE = 512
 const MEAN = [0.485, 0.456, 0.406]
@@ -10,7 +11,7 @@ export class FaceParser {
   constructor() {
     this.session = null
     this.loading = null
-    this.canvas = document.createElement('canvas')
+    this.canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(SIZE, SIZE) : document.createElement('canvas')
     this.canvas.width = SIZE
     this.canvas.height = SIZE
   }
@@ -29,10 +30,14 @@ export class FaceParser {
   async parse(source, mirror = false) {
     const session = await this.load()
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true })
+    const sourceWidth = source.width || source.videoWidth || source.naturalWidth
+    const sourceHeight = source.height || source.videoHeight || source.naturalHeight
+    const content = computeLetterbox(sourceWidth, sourceHeight, SIZE, SIZE)
     ctx.save()
-    ctx.clearRect(0, 0, SIZE, SIZE)
+    ctx.fillStyle = '#000'
+    ctx.fillRect(0, 0, SIZE, SIZE)
     if (mirror) { ctx.translate(SIZE, 0); ctx.scale(-1, 1) }
-    ctx.drawImage(source, 0, 0, SIZE, SIZE)
+    ctx.drawImage(source, content.x, content.y, content.width, content.height)
     ctx.restore()
     const rgba = ctx.getImageData(0, 0, SIZE, SIZE).data
     const plane = SIZE * SIZE
@@ -53,13 +58,13 @@ export class FaceParser {
       }
       labels[pixel] = best
     }
-    return { labels, width: SIZE, height: SIZE }
+    return { labels, width: SIZE, height: SIZE, content }
   }
 }
 
 export function createClassMask(segmentation, classIds, feather = 1) {
   if (!segmentation) return null
-  const { labels, width, height } = segmentation
+  const { labels, width, height, content = { x: 0, y: 0, width, height } } = segmentation
   const accepted = new Set(classIds)
   const hard = document.createElement('canvas')
   hard.width = width; hard.height = height
@@ -67,11 +72,17 @@ export function createClassMask(segmentation, classIds, feather = 1) {
   const image = ctx.createImageData(width, height)
   for (let i = 0; i < labels.length; i++) if (accepted.has(labels[i])) image.data[i * 4 + 3] = 255
   ctx.putImageData(image, 0, 0)
-  if (!feather) return hard
+  const crop = canvas => {
+    const result = document.createElement('canvas')
+    result.width = Math.max(1, Math.round(content.width)); result.height = Math.max(1, Math.round(content.height))
+    result.getContext('2d').drawImage(canvas, content.x, content.y, content.width, content.height, 0, 0, result.width, result.height)
+    return result
+  }
+  if (!feather) return crop(hard)
   const soft = document.createElement('canvas')
   soft.width = width; soft.height = height
   const softCtx = soft.getContext('2d')
   softCtx.filter = `blur(${feather}px)`
   softCtx.drawImage(hard, 0, 0)
-  return soft
+  return crop(soft)
 }
