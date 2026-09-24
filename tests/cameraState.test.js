@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cameraErrorState, CAMERA_COPY, CAMERA_STATES, requestCameraStream } from '../src/try-on/camera/cameraState.js'
+import { cameraErrorMessage, cameraErrorState, CAMERA_COPY, CAMERA_STATES, requestCameraStream } from '../src/try-on/camera/cameraState.js'
 
 test('camera permission errors are classified', () => {
   const previous = globalThis.navigator
@@ -35,4 +35,9 @@ test('camera permission errors do not trigger a second camera request', async ()
   await assert.rejects(requestCameraStream(mediaDevices), { name: 'NotAllowedError' })
   assert.equal(calls, 1)
   assert.match(CAMERA_COPY[CAMERA_STATES.CAMERA_UNAVAILABLE], /browser and device settings/i)
+})
+
+test('camera error message exposes the browser error name for troubleshooting', () => {
+  assert.match(cameraErrorMessage({ name: 'NotFoundError' }), /Browser error: NotFoundError/)
+  assert.match(cameraErrorMessage({ name: 'NotAllowedError' }), /Browser error: NotAllowedError/)
 })

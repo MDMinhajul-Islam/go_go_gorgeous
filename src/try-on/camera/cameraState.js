@@ -52,3 +52,9 @@ export const CAMERA_COPY = Object.freeze({
   deviceDisconnected: 'The camera disconnected. Reconnect it and retry.',
   modelFailed: 'The face model could not start. Upload a photo or use a model.',
 })
+
+export function cameraErrorMessage(error) {
+  const state = cameraErrorState(error)
+  const name = typeof error?.name === 'string' ? error.name : 'UnknownError'
+  return `${CAMERA_COPY[state]} (Browser error: ${name})`
+}
