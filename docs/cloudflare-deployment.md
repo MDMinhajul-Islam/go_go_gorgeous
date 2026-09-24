@@ -11,7 +11,7 @@ This setup uses Cloudflare Pages and its Pages Function only. It does not create
    - `CLOUDFLARE_API_TOKEN`: the Pages-only API token.
 3. Add this repository Actions variable:
    - `CLOUDFLARE_ACCOUNT_ID`: the account ID shown in Cloudflare's Workers & Pages overview.
-4. Push to `main`. GitHub Actions builds and deploys the project; on first deployment Wrangler creates the Pages project if it does not exist. The production site is available at `https://go-go-gorgeous.pages.dev`.
+4. Push to `main`. If either setting is missing, CI succeeds and the deploy job reports a notice and skips deployment. Once both are configured, the next successful push to `main` deploys the project; Wrangler creates the Pages project on first deployment. The production site is available at `https://go-go-gorgeous.pages.dev`.
 
 Pull requests and other branches run CI and the Docker image build but do not deploy. The model proxy points to this repository's `main` branch; its browser cache lifetime is one hour. For local Docker, run `docker compose up --build` and open `http://localhost:8080`.
 

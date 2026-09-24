@@ -49,7 +49,7 @@ The site is served at `http://localhost:8080` with Docker Compose. Live camera a
 
 The intended hosting is Cloudflare Pages on its free `*.pages.dev` hostname; a custom domain is not required. The current model-delivery design intentionally avoids R2 and paid subscriptions: Pages serves the built app and its Function fetches the model from this public GitHub repo. That means the GitHub repo/model must stay public and reachable. Do not activate a Cloudflare billing subscription or add R2 as part of routine work.
 
-GitHub Actions deploys only on `main` after CI passes, and only when repo Actions configuration exists:
+GitHub Actions deploys only on `main` after CI passes. If either required repo Actions setting is missing, the deploy job reports a notice and safely skips deployment:
 
 - Secret `CLOUDFLARE_API_TOKEN` with Cloudflare Pages Edit only.
 - Variable `CLOUDFLARE_ACCOUNT_ID`.
@@ -63,4 +63,3 @@ The Pages project name is `go-go-gorgeous`; direct Wrangler deploy should publis
 3. Run `pnpm test`, `pnpm verify:assets`, `pnpm build`, and `pnpm check:bundle`; build the Docker image when container/deployment behavior changes.
 4. For camera/render changes, automated tests are not a substitute for the browser/device matrix in `docs/TESTING.md`. Mark unperformed real-device verification as pending.
 5. Keep docs, lockfile, asset hashes, and deployment configuration in sync. Avoid broad rewrites of `src/main.jsx` or renderer code without visual-regression coverage.
-
