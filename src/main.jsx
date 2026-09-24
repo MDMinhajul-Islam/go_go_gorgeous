@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Camera, ChevronDown, Heart, Menu, Search, ShoppingBag, Sparkles, Upload, User, X, ZoomIn } from 'lucide-react'
 import './styles.css'
+import './try-on/camera/camera.css'
 import { categories, getProduct, getVariant, products } from './catalog/catalog.js'
 import { cartCount, cartReducer, loadCart, saveCart } from './cart/cart.js'
 import { orderedLookLayers, removeLookLayer, toggleLookLayer, updateLookLayer, upsertLookLayer } from './try-on/state/lookState.js'
@@ -133,8 +134,9 @@ function TryOn({ product: initial, initialShade, onClose, onAdd }) {
   const startCamera=async()=>{
     const session=++cameraSessionRef.current
     setError('');setCameraState(CAMERA_STATES.REQUESTING_PERMISSION)
+    let stream
     try{
-      const stream=await requestCameraStream(navigator.mediaDevices)
+      stream=await requestCameraStream(navigator.mediaDevices)
       if(session!==cameraSessionRef.current){stream.getTracks().forEach(track=>track.stop());return}
       streamRef.current=stream;setCameraState(CAMERA_STATES.STARTING)
       const track=stream.getVideoTracks()[0]
@@ -143,12 +145,32 @@ function TryOn({ product: initial, initialShade, onClose, onAdd }) {
       v.srcObject=stream
       if(v.readyState<1)await new Promise((resolve,reject)=>{v.addEventListener('loadedmetadata',resolve,{once:true});v.addEventListener('error',reject,{once:true})})
       if(session!==cameraSessionRef.current)return
-      await v.play();setCameraState(CAMERA_STATES.WARMING_MODELS)
-      const lm=await setLandmarkerMode('VIDEO');if(session!==cameraSessionRef.current)return
+      await v.play()
+      const previewCanvas=canvasRef.current
+      if(previewCanvas){previewCanvas.width=v.videoWidth||1;previewCanvas.height=v.videoHeight||1}
+    }catch(error){
+      if(session!==cameraSessionRef.current)return
+      stream?.getTracks().forEach(track=>track.stop())
+      streamRef.current=null
+      if(videoRef.current)videoRef.current.srcObject=null
+      const state=cameraErrorState(error);setCameraState(state);setError(cameraErrorMessage(error))
+      return
+    }
+    setCameraState(CAMERA_STATES.WARMING_MODELS)
+    let lm
+    try{
+      lm=await setLandmarkerMode('VIDEO')
+    }catch(error){
+      if(session!==cameraSessionRef.current)return
+      const name=typeof error?.name==='string'?error.name:'UnknownError'
+      setCameraState(CAMERA_STATES.MODEL_FAILED)
+      setError(`${CAMERA_COPY[CAMERA_STATES.MODEL_FAILED]} (Browser error: ${name})`)
+      return
+    }
+    if(session!==cameraSessionRef.current)return
       let lastVideoTime=-1
       const loop=()=>{if(session!==cameraSessionRef.current||!videoRef.current||!canvasRef.current)return;const c=canvasRef.current,ctx=c.getContext('2d'),video=videoRef.current;if(video.videoWidth){if(c.width!==video.videoWidth||c.height!==video.videoHeight){c.width=video.videoWidth;c.height=video.videoHeight}ctx.save();ctx.translate(c.width,0);ctx.scale(-1,1);ctx.drawImage(video,0,0,c.width,c.height);ctx.restore();if(video.currentTime!==lastVideoTime){lastVideoTime=video.currentTime;const res=lm.detectForVideo(video,performance.now()),faces=res.faceLandmarks||[];if(faces.length>1){lastLandmarksRef.current=null;setCameraState(CAMERA_STATES.MULTIPLE_FACES)}else if(faces.length===0){lastLandmarksRef.current=null;setCameraState(CAMERA_STATES.NO_FACE)}else{setCameraState(CAMERA_STATES.READY);const detected=faces[0].map(p=>({...p,x:1-p.x})),previous=lastLandmarksRef.current;lastLandmarksRef.current=previous?detected.map((p,i)=>{const dx=p.x-previous[i].x,dy=p.y-previous[i].y,motion=Math.sqrt(dx*dx+dy*dy),follow=Math.min(.88,.22+motion*42);return{x:previous[i].x*(1-follow)+p.x*follow,y:previous[i].y*(1-follow)+p.y*follow,z:(previous[i].z||0)*(1-follow)+(p.z||0)*follow}}):detected;scheduleParsing(video,true)}}if(lastLandmarksRef.current)renderMakeup(ctx,lastLandmarksRef.current,c.width,c.height)}rafRef.current=requestAnimationFrame(loop)}
       loop()
-    }catch(error){if(session!==cameraSessionRef.current)return;const state=cameraErrorState(error);setCameraState(state);setError(cameraErrorMessage(error))}
   }
   const chooseMode=m=>{stopCamera();setMode(m);setError('');if(m==='model'&&imageRef.current?.complete)processImage(imageRef.current);if(m==='camera')prepareCamera()}
   const upload=e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')||file.size>12*1024*1024){setError('Choose a valid image smaller than 12 MB.');return}chooseMode('upload');if(uploadUrlRef.current)URL.revokeObjectURL(uploadUrlRef.current);uploadUrlRef.current=URL.createObjectURL(file);setUploadedUrl(uploadUrlRef.current)}
