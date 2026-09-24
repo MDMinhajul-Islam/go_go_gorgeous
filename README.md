@@ -1,6 +1,6 @@
 # Go Go Gorgeous
 
-Privacy-first, browser-based virtual makeup try-on for lipstick, eyeliner and an experimental concealer preview. Camera frames and uploaded photos are processed in memory on the customer's device and are not sent to an application server.
+Privacy-first, browser-based Virtual Beauty Mirror with simultaneous lipstick, eyeliner and an experimental concealer preview. Camera frames and uploaded photos are processed in memory on the customer's device and are not sent to an application server.
 
 ## Run locally
 
@@ -10,7 +10,9 @@ Requirements: Node.js 20+ and pnpm 9+.
 pnpm install --frozen-lockfile
 pnpm dev
 pnpm test
+pnpm verify:assets
 pnpm build
+pnpm check:bundle
 pnpm preview
 ```
 
@@ -22,6 +24,8 @@ Live camera access requires `https://` or `localhost`. The first Try-On launch d
 - Supported: both eyeliner products and all shades.
 - Beta: concealer. It is a visual approximation and is not a shade-matching claim.
 - Sources: live camera, a memory-only uploaded image, or five sample models.
+- Look stack: combine, disable, remove and clear multiple cosmetic layers without restarting the camera.
+- Before/After: compare the same source frame with composition enabled or disabled.
 - Bag: exact product/shade SKU, quantity, remove, persistence and reopening Try-On.
 - Checkout is intentionally disabled until a real commerce provider is connected.
 
@@ -44,12 +48,22 @@ Only catalog/cart state is persisted. Face frames, uploads, landmarks and masks 
 ## Documentation
 
 - [Architecture and limitations](docs/ARCHITECTURE.md)
+- [Try-On pipeline](docs/TRY_ON_PIPELINE.md)
+- [Rendering](docs/RENDERING.md)
+- [Camera lifecycle](docs/CAMERA.md)
 - [Privacy and threat model](docs/PRIVACY.md)
+- [Security](docs/SECURITY.md)
 - [Model and runtime inventory](docs/MODELS.md)
+- [License audit](docs/LICENSE_AUDIT.md)
+- [Third-party notices](THIRD_PARTY_NOTICES.md)
+- [Accessibility](docs/ACCESSIBILITY.md)
+- [Performance](docs/PERFORMANCE.md)
 - [Testing and browser support](docs/TESTING.md)
+- [Device matrix](docs/DEVICE_MATRIX.md)
 - [Deployment and release](docs/DEPLOYMENT.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## Known release checks
 
 Automated build and domain tests are necessary but not sufficient for camera software. Before a public release, complete the real-device matrix in `docs/TESTING.md`, obtain written rights/consent records for every sample-model image, and connect a real checkout provider or keep checkout visibly unavailable.
-

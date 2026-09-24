@@ -7,7 +7,7 @@ pnpm test
 pnpm build
 ```
 
-Cart tests cover merging exact SKUs, preserving different shades, invalid persisted data and quantity removal. The production build is the bundle/lazy-loading gate.
+Tests cover cart/SKU behavior, letterbox geometry, multi-product layer coexistence/order/toggle/remove, camera error classification and capability-tier selection. Asset checks verify pinned model hashes; the production build and bundle-budget check protect lazy loading.
 
 ## Required manual release matrix
 
@@ -23,4 +23,3 @@ Cart tests cover merging exact SKUs, preserving different shades, invalid persis
 For each browser test permission deny/retry, no camera, low light, blink, smile, glasses, medium yaw, tab background/foreground, portrait/landscape rotation, repeated open/close, rapid mode/product switching and a 10-minute memory soak. Confirm the camera indicator disappears immediately on close.
 
 Visual validation must use licensed/consented fixtures across a representative range of skin tones. Verify lipstick inner-mouth exclusion and eyeliner left/right wing direction. Camera behavior cannot be certified from a headless build alone.
-
