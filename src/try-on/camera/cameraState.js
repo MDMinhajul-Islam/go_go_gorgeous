@@ -25,6 +25,18 @@ export function cameraErrorState(error) {
   return CAMERA_STATES.CAMERA_UNAVAILABLE
 }
 
+export async function requestCameraStream(mediaDevices) {
+  try {
+    return await mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    })
+  } catch (error) {
+    if (error?.name !== 'NotFoundError' && error?.name !== 'OverconstrainedError') throw error
+    return mediaDevices.getUserMedia({ video: true, audio: false })
+  }
+}
+
 export const CAMERA_COPY = Object.freeze({
   explainingPermission: 'Your camera stays on this device. Continue when you are ready.',
   requestingPermission: 'Waiting for camera permission…',
@@ -34,10 +46,9 @@ export const CAMERA_COPY = Object.freeze({
   noFace: 'Center your face in the mirror.',
   multipleFaces: 'Multiple faces detected. Please keep one face in view.',
   permissionDenied: 'Camera permission was not granted. You can retry, upload a photo or use a model.',
-  cameraUnavailable: 'No available camera was found. Try Upload or Model mode.',
+  cameraUnavailable: 'No camera is visible to your browser. Connect or enable a camera, allow camera access for this site in your browser and device settings, and close other apps using it. Then retry, or use Upload or Model mode.',
   cameraBusy: 'The camera may be in use by another app. Close it there and retry.',
   browserUnsupported: 'This browser does not support live camera Try-On.',
   deviceDisconnected: 'The camera disconnected. Reconnect it and retry.',
   modelFailed: 'The face model could not start. Upload a photo or use a model.',
 })
-

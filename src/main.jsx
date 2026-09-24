@@ -5,7 +5,7 @@ import './styles.css'
 import { categories, getProduct, getVariant, products } from './catalog/catalog.js'
 import { cartCount, cartReducer, loadCart, saveCart } from './cart/cart.js'
 import { orderedLookLayers, removeLookLayer, toggleLookLayer, updateLookLayer, upsertLookLayer } from './try-on/state/lookState.js'
-import { CAMERA_COPY, CAMERA_STATES, cameraErrorState } from './try-on/camera/cameraState.js'
+import { CAMERA_COPY, CAMERA_STATES, cameraErrorState, requestCameraStream } from './try-on/camera/cameraState.js'
 import { chooseQualityTier, detectCapabilities } from './try-on/core/capabilities.js'
 
 const fmt = n => `৳ ${n.toLocaleString('en-BD')}.00`
@@ -134,7 +134,7 @@ function TryOn({ product: initial, initialShade, onClose, onAdd }) {
     const session=++cameraSessionRef.current
     setError('');setCameraState(CAMERA_STATES.REQUESTING_PERMISSION)
     try{
-      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false})
+      const stream=await requestCameraStream(navigator.mediaDevices)
       if(session!==cameraSessionRef.current){stream.getTracks().forEach(track=>track.stop());return}
       streamRef.current=stream;setCameraState(CAMERA_STATES.STARTING)
       const track=stream.getVideoTracks()[0]
