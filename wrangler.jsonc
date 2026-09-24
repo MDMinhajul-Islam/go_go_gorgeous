@@ -2,11 +2,5 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "go-go-gorgeous",
   "compatibility_date": "2026-09-24",
-  "pages_build_output_dir": "./dist",
-  "r2_buckets": [
-    {
-      "binding": "FACE_MODEL_BUCKET",
-      "bucket_name": "go-go-gorgeous-models"
-    }
-  ]
+  "pages_build_output_dir": "./dist"
 }

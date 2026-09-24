@@ -1,4 +1,4 @@
-import * as ort from 'onnxruntime-web'
+import * as ort from 'onnxruntime-web/wasm'
 import { computeLetterbox } from './try-on/core/geometry.js'
 
 const SIZE = 512

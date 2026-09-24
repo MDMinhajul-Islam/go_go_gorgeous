@@ -44,12 +44,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build for Cloudflare Pages
         run: pnpm build
-      - name: Upload face model to R2
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          command: r2 object put "go-go-gorgeous-models/models/face-parsing-resnet18.onnx" --file=public/models/face-parsing-resnet18.onnx --content-type=application/octet-stream --remote
       - name: Remove model from Pages static assets
         run: rm dist/models/face-parsing-resnet18.onnx
       - name: Deploy to Cloudflare Pages

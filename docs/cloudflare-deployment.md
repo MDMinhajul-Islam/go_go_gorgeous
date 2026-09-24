@@ -1,21 +1,18 @@
-# Cloudflare deployment setup
+# Free Cloudflare Pages deployment
 
-The GitHub Actions workflow runs tests, model-asset checks, the production build, and a Docker image build on pushes and pull requests. A successful push to `main` uploads the face-parsing model to a private R2 bucket and deploys the site plus its R2-backed Pages Function. The model stays at the app's same-origin `/models/face-parsing-resnet18.onnx` URL; the bucket itself is not public.
+The GitHub Actions workflow runs tests, verifies model assets, builds the production site, and builds a Docker image on pushes and pull requests. A successful push to `main` deploys the site to Cloudflare Pages. No custom domain is required: Cloudflare provides the free `go-go-gorgeous.pages.dev` address.
 
-## One-time Cloudflare setup
+This setup uses Cloudflare Pages and its Pages Function only. It does not create an R2 bucket, enable a paid plan, or require a billing method. The large face-parsing ONNX model is kept in this public GitHub repository and served at the app's same-origin `/models/face-parsing-resnet18.onnx` endpoint by a narrowly scoped Pages Function proxy. The build removes the model from `dist` so it does not exceed Pages' per-file asset limit. Only the model file is fetched by the proxy; camera frames and user photos are processed in the browser and are not sent to GitHub by this function.
 
-1. Create a Cloudflare Pages project named `go-go-gorgeous` in your account. Set its production branch to `main`. GitHub Actions performs deployments, so do not enable a second competing build pipeline for this project.
-2. Create a private R2 bucket named `go-go-gorgeous-models`. Do not enable public bucket access or an `r2.dev` URL. The Pages Function reads the model through the private R2 binding in `wrangler.jsonc` and supports byte-range requests.
-3. Create a Cloudflare API token scoped to this account with Cloudflare Pages edit and R2 object read/write permissions. Store it only as a GitHub Actions secret; do not commit it or put it in a Vite variable.
+## One-time setup
 
-## GitHub repository settings
+1. In Cloudflare, create an API token for this account with **Cloudflare Pages: Edit** permission only. Do not select R2 permissions or activate any paid subscription.
+2. In the GitHub repository settings, open **Secrets and variables → Actions** and add this repository secret:
+   - `CLOUDFLARE_API_TOKEN`: the Pages-only API token.
+3. Add this repository Actions variable:
+   - `CLOUDFLARE_ACCOUNT_ID`: the account ID shown in Cloudflare's Workers & Pages overview.
+4. Push to `main`. GitHub Actions builds and deploys the project; on first deployment Wrangler creates the Pages project if it does not exist. The production site is available at `https://go-go-gorgeous.pages.dev`.
 
-Add this Actions secret:
+Pull requests and other branches run CI and the Docker image build but do not deploy. The model proxy points to this repository's `main` branch; its browser cache lifetime is one hour. For local Docker, run `docker compose up --build` and open `http://localhost:8080`.
 
-- `CLOUDFLARE_API_TOKEN`: the scoped token above.
-
-Add this Actions variable:
-
-- `CLOUDFLARE_ACCOUNT_ID`: the account ID shown in Cloudflare's Workers & Pages overview.
-
-After the two Cloudflare resources and GitHub settings are in place, each successful push to `main` uploads the model and deploys the site. Pull requests and other branches run CI and Docker builds only. For local Docker, run `docker compose up --build` and open `http://localhost:8080`.
+The try-on model and camera flow are client-side. Use HTTPS (the Pages URL does) and make sure the browser grants camera permission. The face-parsing model is served from this repository, so that public GitHub source must remain available for the endpoint to work.
