@@ -10,13 +10,15 @@ export async function onRequest({ request, env }) {
 
   const headers = new Headers({
     'Accept-Ranges': 'bytes',
-    'Cache-Control': 'public, max-age=31536000, immutable',
+    'Cache-Control': 'public, max-age=3600, must-revalidate',
     'Content-Type': 'application/octet-stream',
     'ETag': metadata.httpEtag,
     'X-Content-Type-Options': 'nosniff',
   });
 
-  if (request.headers.get('If-None-Match') === metadata.httpEtag) {
+  const etags = request.headers.get('If-None-Match')?.split(',').map((tag) => tag.trim()) ?? [];
+  const currentEtag = metadata.httpEtag;
+  if (etags.includes('*') || etags.some((tag) => tag.replace(/^W\//, '') === currentEtag)) {
     return new Response(null, { status: 304, headers });
   }
 

@@ -33,12 +33,20 @@ test('serves model metadata to HEAD without downloading the body', async () => {
   assert.equal(ctx.calls.length, 1);
 });
 
-test('serves the full model with immutable caching', async () => {
+test('serves the full model with bounded caching', async () => {
   const ctx = context();
   const response = await onRequest(ctx);
   assert.equal(response.status, 200);
-  assert.equal(response.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=3600, must-revalidate');
   assert.equal((await response.arrayBuffer()).byteLength, 10);
+});
+
+test('revalidates matching model ETags without reading the object body', async () => {
+  const ctx = context('GET', { 'If-None-Match': '"model-etag"' });
+  const response = await onRequest(ctx);
+  assert.equal(response.status, 304);
+  assert.equal(await response.text(), '');
+  assert.equal(ctx.calls.length, 1);
 });
 
 test('supports a single byte range', async () => {
