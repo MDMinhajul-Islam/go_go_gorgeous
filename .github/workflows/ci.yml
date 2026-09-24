@@ -70,6 +70,5 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: >-
           npx --yes wrangler@4 pages deploy dist
-          --config=wrangler.jsonc
           --project-name=go-go-gorgeous
           --branch=main
