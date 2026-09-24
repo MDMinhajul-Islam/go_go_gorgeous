@@ -71,9 +71,18 @@ jobs:
         shell: bash
         run: |
           projects="$(npx --yes wrangler@4 pages project list --json)"
-          project_exists="$(printf '%s' "$projects" | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => { const projects = JSON.parse(input); const list = Array.isArray(projects) ? projects : projects.result; console.log(Array.isArray(list) && list.some(project => project.name === "go-go-gorgeous")); });')"
-          if [[ "$project_exists" != "true" ]]; then
-            npx --yes wrangler@4 pages project create go-go-gorgeous --production-branch=main
+          if printf '%s' "$projects" | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => { const data = JSON.parse(input); const list = Array.isArray(data) ? data : data.result; process.exit(Array.isArray(list) && list.some(project => project.name === "go-go-gorgeous") ? 0 : 1); });'; then
+            echo "Cloudflare Pages project go-go-gorgeous already exists."
+          else
+            create_output="$(npx --yes wrangler@4 pages project create go-go-gorgeous --production-branch=main 2>&1)" || {
+              if [[ "$create_output" == *"A project with this name already exists"* ]]; then
+                echo "Cloudflare Pages project already exists; continuing with deployment."
+              else
+                printf '%s\n' "$create_output"
+                exit 1
+              fi
+            }
+            printf '%s\n' "$create_output"
           fi
       - name: Deploy to Cloudflare Pages
         if: steps.cloudflare-config.outputs.configured == 'true'
