@@ -50,6 +50,8 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: r2 object put "go-go-gorgeous-models/models/face-parsing-resnet18.onnx" --file=public/models/face-parsing-resnet18.onnx --content-type=application/octet-stream --remote
+      - name: Remove model from Pages static assets
+        run: rm dist/models/face-parsing-resnet18.onnx
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
