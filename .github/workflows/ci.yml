@@ -21,3 +21,47 @@ jobs:
       - run: pnpm verify:assets
       - run: pnpm build
       - run: pnpm check:bundle
+      - name: Build Docker image
+        run: docker build --tag go-go-gorgeous:${{ github.sha }} .
+
+  deploy:
+    needs: quality
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      vars.CLOUDFLARE_ACCOUNT_ID != '' && vars.CLOUDFLARE_PAGES_PROJECT != '' &&
+      vars.CLOUDFLARE_R2_BUCKET != '' && vars.FACE_PARSER_PUBLIC_URL != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build for Cloudflare Pages
+        env:
+          VITE_FACE_PARSER_MODEL_URL: ${{ vars.FACE_PARSER_PUBLIC_URL }}/models/face-parsing-resnet18-0d9bd318.onnx
+        run: pnpm build
+      - name: Upload face model to R2
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: r2 object put "${{ vars.CLOUDFLARE_R2_BUCKET }}/models/face-parsing-resnet18-0d9bd318.onnx" --file=public/models/face-parsing-resnet18.onnx --content-type=application/octet-stream --remote
+      - name: Prepare Pages output
+        env:
+          FACE_PARSER_PUBLIC_URL: ${{ vars.FACE_PARSER_PUBLIC_URL }}
+        run: |
+          node scripts/configure-pages-headers.mjs
+          rm dist/models/face-parsing-resnet18.onnx
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name="${{ vars.CLOUDFLARE_PAGES_PROJECT }}" --branch=main

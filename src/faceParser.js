@@ -21,7 +21,8 @@ export class FaceParser {
     if (this.loading) return this.loading
     ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1
     ort.env.wasm.simd = true
-    this.loading = ort.InferenceSession.create('/models/face-parsing-resnet18.onnx', {
+    const modelUrl = import.meta.env.VITE_FACE_PARSER_MODEL_URL || '/models/face-parsing-resnet18.onnx';
+    this.loading = ort.InferenceSession.create(modelUrl, {
       executionProviders: ['wasm'], graphOptimizationLevel: 'all',
     }).then(session => (this.session = session))
     return this.loading
