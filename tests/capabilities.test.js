@@ -12,3 +12,14 @@ test('capability detection is safe without browser globals', () => {
   assert.equal(result.camera, false)
   assert.equal(result.hardwareConcurrency, 1)
 })
+
+test('capability detection tolerates blocked graphics probes and invalid device hints', () => {
+  const result = detectCapabilities({
+    document: { createElement: () => ({ getContext() { throw new Error('blocked') } }) },
+    navigator: { hardwareConcurrency: Number.NaN, deviceMemory: -4 },
+  })
+  assert.equal(result.webgl, false)
+  assert.equal(result.webgl2, false)
+  assert.equal(result.hardwareConcurrency, 1)
+  assert.equal(result.deviceMemory, null)
+})
