@@ -77,3 +77,13 @@ test('passes conditional requests through and rejects unsupported methods', asyn
   assert.equal(methodResponse.status, 405);
   assert.equal(methodResponse.headers.get('allow'), 'GET, HEAD');
 });
+
+test('converts upstream network failures into a safe temporary error', async () => {
+  await withFetch(async () => { throw new Error('private upstream detail') }, async () => {
+    const response = await onRequest(context());
+    assert.equal(response.status, 502);
+    assert.equal(await response.text(), 'Face model temporarily unavailable');
+    assert.equal(response.headers.get('content-type'), 'application/octet-stream');
+    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  });
+});
