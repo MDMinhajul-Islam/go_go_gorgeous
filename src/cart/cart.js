@@ -32,7 +32,13 @@ export function loadCart(storage = globalThis.localStorage) {
 }
 
 export function saveCart(items, storage = globalThis.localStorage) {
-  try { storage?.setItem(CART_STORAGE_KEY, JSON.stringify(sanitizeCart(items))) } catch { /* storage may be unavailable */ }
+  try {
+    if (!storage?.setItem) return false
+    storage.setItem(CART_STORAGE_KEY, JSON.stringify(sanitizeCart(items)))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function cartReducer(state, action) {
