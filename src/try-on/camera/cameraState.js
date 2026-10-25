@@ -27,6 +27,11 @@ export function cameraErrorState(error) {
 }
 
 export async function requestCameraStream(mediaDevices) {
+  if (typeof mediaDevices?.getUserMedia !== 'function') {
+    const error = new Error('Camera API unavailable')
+    error.name = 'NotSupportedError'
+    throw error
+  }
   try {
     return await mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },

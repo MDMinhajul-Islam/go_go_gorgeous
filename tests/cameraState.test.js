@@ -41,6 +41,20 @@ test('camera permission errors do not trigger a second camera request', async ()
   assert.match(CAMERA_COPY[CAMERA_STATES.CAMERA_UNAVAILABLE], /browser and device settings/i)
 })
 
+test('missing camera APIs fail with a classifiable unsupported error', async () => {
+  const previous = globalThis.navigator
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} })
+  try {
+    await assert.rejects(requestCameraStream(undefined), error => {
+      assert.equal(error.name, 'NotSupportedError')
+      assert.equal(cameraErrorState(error), CAMERA_STATES.BROWSER_UNSUPPORTED)
+      return true
+    })
+  } finally {
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: previous })
+  }
+})
+
 test('camera error message exposes the browser error name for troubleshooting', () => {
   assert.match(cameraErrorMessage({ name: 'NotFoundError' }), /Browser error: NotFoundError/)
   assert.match(cameraErrorMessage({ name: 'NotAllowedError' }), /Browser error: NotAllowedError/)
