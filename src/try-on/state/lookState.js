@@ -55,6 +55,6 @@ export function removeLookLayer(look, category) {
 }
 
 export function orderedLookLayers(look) {
-  return Object.values(look).sort((a, b) => LAYER_ORDER.indexOf(a.category) - LAYER_ORDER.indexOf(b.category))
+  return LAYER_ORDER.flatMap(category => look?.[category]?.category === category ? [look[category]] : [])
 }
 

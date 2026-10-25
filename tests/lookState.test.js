@@ -64,3 +64,13 @@ test('render order is deterministic', () => {
   look = upsertLookLayer(look, eyeliner, eyeliner.shades[0])
   assert.deepEqual(orderedLookLayers(look).map(layer => layer.category), ['concealer', 'eyeliner', 'lipstick'])
 })
+
+test('render order excludes unknown and mis-keyed layers', () => {
+  const look = upsertLookLayer({}, lipstick, lipstick.shades[0])
+  assert.deepEqual(orderedLookLayers({
+    ...look,
+    foundation: { ...look.lipstick, category: 'foundation' },
+    eyeliner: { ...look.lipstick },
+  }).map(layer => layer.category), ['lipstick'])
+  assert.deepEqual(orderedLookLayers(null), [])
+})
