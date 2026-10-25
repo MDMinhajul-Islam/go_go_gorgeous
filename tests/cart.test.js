@@ -18,6 +18,19 @@ test('persisted invalid or discontinued SKUs are discarded', () => {
   assert.deepEqual(sanitizeCart([{ productId: 'missing', variantId: 'missing', quantity: 8 }]), [])
 })
 
+test('persisted duplicate SKUs merge without losing shade identity', () => {
+  const otherVariant = product.variants[1]
+  const sanitized = sanitizeCart([
+    { productId: product.id, variantId: variant.id, quantity: 60 },
+    { productId: product.id, variantId: otherVariant.id, quantity: 2 },
+    { productId: product.id, variantId: variant.id, quantity: 50 },
+  ])
+  assert.deepEqual(sanitized, [
+    { productId: product.id, variantId: variant.id, quantity: 99 },
+    { productId: product.id, variantId: otherVariant.id, quantity: 2 },
+  ])
+})
+
 test('cart quantities reject malformed values and stay within supported bounds', () => {
   const item = quantity => ({ productId: product.id, variantId: variant.id, quantity })
   assert.equal(sanitizeCart([item('2items')])[0].quantity, 1)

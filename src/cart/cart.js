@@ -13,12 +13,18 @@ function normalizeQuantity(value, { allowZero = false } = {}) {
 
 export function sanitizeCart(value) {
   if (!Array.isArray(value)) return []
-  return value.flatMap(item => {
+  const sanitized = value.flatMap(item => {
     const product = getProduct(item?.productId)
     const variant = getVariant(product, item?.variantId)
     const quantity = normalizeQuantity(item?.quantity)
     return product && variant ? [{ productId: product.id, variantId: variant.id, quantity }] : []
   })
+  return sanitized.reduce((items, item) => {
+    const existing = items.find(candidate => candidate.productId === item.productId && candidate.variantId === item.variantId)
+    if (existing) existing.quantity = Math.min(99, existing.quantity + item.quantity)
+    else items.push({ ...item })
+    return items
+  }, [])
 }
 
 export function loadCart(storage = globalThis.localStorage) {
