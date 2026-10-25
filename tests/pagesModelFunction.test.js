@@ -87,3 +87,20 @@ test('converts upstream network failures into a safe temporary error', async () 
     assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
   });
 });
+
+test('preserves safe upstream statuses and keeps failed HEAD responses bodyless', async () => {
+  await withFetch(async () => new Response('upstream repository detail', { status: 404 }), async () => {
+    const response = await onRequest(context('HEAD'));
+    assert.equal(response.status, 404);
+    assert.equal(await response.text(), '');
+  });
+  await withFetch(async () => new Response('range detail', {
+    status: 416,
+    headers: { 'Content-Range': 'bytes */53205364' },
+  }), async () => {
+    const response = await onRequest(context('GET', { Range: 'bytes=99999999-' }));
+    assert.equal(response.status, 416);
+    assert.equal(response.headers.get('content-range'), 'bytes */53205364');
+    assert.equal(await response.text(), 'Face model temporarily unavailable');
+  });
+});

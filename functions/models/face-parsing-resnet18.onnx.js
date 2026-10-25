@@ -32,7 +32,7 @@ export async function onRequest({ request }) {
   }
 
   if (!upstream.ok && upstream.status !== 304) {
-    return new Response('Face model temporarily unavailable', {
+    return new Response(request.method === 'HEAD' ? null : 'Face model temporarily unavailable', {
       status: upstream.status === 404 ? 404 : upstream.status === 416 ? 416 : 502,
       headers,
     });
