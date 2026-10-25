@@ -1,5 +1,8 @@
 export function computeLetterbox(sourceWidth, sourceHeight, targetWidth = 512, targetHeight = 512) {
-  if (sourceWidth <= 0 || sourceHeight <= 0 || targetWidth <= 0 || targetHeight <= 0) throw new RangeError('Dimensions must be positive')
+  const dimensions = [sourceWidth, sourceHeight, targetWidth, targetHeight]
+  if (!dimensions.every(dimension => Number.isFinite(dimension) && dimension > 0)) {
+    throw new RangeError('Dimensions must be finite positive numbers')
+  }
   const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight)
   const width = sourceWidth * scale
   const height = sourceHeight * scale
