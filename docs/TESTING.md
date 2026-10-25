@@ -7,7 +7,7 @@ pnpm test
 pnpm build
 ```
 
-Tests cover cart/SKU behavior, letterbox geometry, multi-product layer coexistence/order/toggle/remove, camera error classification and capability-tier selection. Asset checks verify pinned model hashes; the production build and bundle-budget check protect lazy loading.
+Tests cover strict cart quantity and persistence sanitization, duplicate SKU merging, letterbox geometry validation, multi-product layer coexistence and identity-safe updates, camera error classification and fallback constraints, defensive capability detection, adaptive quality thresholds, and model-proxy caching/range/failure behavior. Asset checks verify pinned model hashes; the production build and bundle-budget check protect lazy loading.
 
 ## Required manual release matrix
 

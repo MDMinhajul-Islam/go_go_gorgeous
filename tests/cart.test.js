@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { cartReducer, sanitizeCart } from '../src/cart/cart.js'
+import { CART_STORAGE_KEY, cartReducer, loadCart, sanitizeCart, saveCart } from '../src/cart/cart.js'
 import { products } from '../src/catalog/catalog.js'
 
 const product = products[0]
@@ -18,7 +18,55 @@ test('persisted invalid or discontinued SKUs are discarded', () => {
   assert.deepEqual(sanitizeCart([{ productId: 'missing', variantId: 'missing', quantity: 8 }]), [])
 })
 
+test('persisted duplicate SKUs merge without losing shade identity', () => {
+  const otherVariant = product.variants[1]
+  const sanitized = sanitizeCart([
+    { productId: product.id, variantId: variant.id, quantity: 60 },
+    { productId: product.id, variantId: otherVariant.id, quantity: 2 },
+    { productId: product.id, variantId: variant.id, quantity: 50 },
+  ])
+  assert.deepEqual(sanitized, [
+    { productId: product.id, variantId: variant.id, quantity: 99 },
+    { productId: product.id, variantId: otherVariant.id, quantity: 2 },
+  ])
+})
+
+test('cart quantities reject malformed values and stay within supported bounds', () => {
+  const item = quantity => ({ productId: product.id, variantId: variant.id, quantity })
+  assert.equal(sanitizeCart([item('2items')])[0].quantity, 1)
+  assert.equal(sanitizeCart([item(Number.POSITIVE_INFINITY)])[0].quantity, 1)
+  assert.equal(sanitizeCart([item(-4)])[0].quantity, 1)
+  assert.equal(sanitizeCart([item(2.9)])[0].quantity, 2)
+  assert.equal(sanitizeCart([item(1000)])[0].quantity, 99)
+})
+
+test('malformed quantity updates remove the matching SKU', () => {
+  const state = [{ productId: product.id, variantId: variant.id, quantity: 2 }]
+  assert.deepEqual(cartReducer(state, { type: 'quantity', productId: product.id, variantId: variant.id, quantity: '2items' }), [])
+})
+
 test('quantity zero removes an item', () => {
   const state = [{ productId: product.id, variantId: variant.id, quantity: 1 }]
   assert.deepEqual(cartReducer(state, { type: 'quantity', productId: product.id, variantId: variant.id, quantity: 0 }), [])
+})
+
+test('cart persistence fails safely when browser storage is unavailable', () => {
+  const unavailable = {
+    getItem() { throw new Error('blocked') },
+    setItem() { throw new Error('quota exceeded') },
+  }
+  assert.deepEqual(loadCart(unavailable), [])
+  assert.equal(saveCart([{ productId: product.id, variantId: variant.id, quantity: 1 }], unavailable), false)
+  assert.equal(saveCart([], undefined), false)
+})
+
+test('cart persistence stores only sanitized catalog identities', () => {
+  let stored
+  const storage = { setItem(key, value) { stored = { key, value } } }
+  assert.equal(saveCart([
+    { productId: product.id, variantId: variant.id, quantity: 2 },
+    { productId: 'missing', variantId: 'missing', quantity: 4 },
+  ], storage), true)
+  assert.equal(stored.key, CART_STORAGE_KEY)
+  assert.deepEqual(JSON.parse(stored.value), [{ productId: product.id, variantId: variant.id, quantity: 2 }])
 })
