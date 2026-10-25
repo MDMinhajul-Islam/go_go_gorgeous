@@ -8,6 +8,10 @@ test('camera permission errors are classified', () => {
   assert.equal(cameraErrorState({ name: 'NotAllowedError' }), CAMERA_STATES.PERMISSION_DENIED)
   assert.equal(cameraErrorState({ name: 'NotReadableError' }), CAMERA_STATES.CAMERA_BUSY)
   assert.equal(cameraErrorState({ name: 'NotFoundError' }), CAMERA_STATES.CAMERA_UNAVAILABLE)
+  assert.equal(cameraErrorState({ name: 'PermissionDeniedError' }), CAMERA_STATES.PERMISSION_DENIED)
+  assert.equal(cameraErrorState({ name: 'DevicesNotFoundError' }), CAMERA_STATES.CAMERA_UNAVAILABLE)
+  assert.equal(cameraErrorState({ name: 'TrackStartError' }), CAMERA_STATES.CAMERA_BUSY)
+  assert.equal(cameraErrorState({ name: 'NotSupportedError' }), CAMERA_STATES.BROWSER_UNSUPPORTED)
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: previous })
 })
 

@@ -19,9 +19,10 @@ export const CAMERA_STATES = Object.freeze({
 
 export function cameraErrorState(error) {
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) return CAMERA_STATES.BROWSER_UNSUPPORTED
-  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') return CAMERA_STATES.PERMISSION_DENIED
-  if (error?.name === 'NotFoundError' || error?.name === 'OverconstrainedError') return CAMERA_STATES.CAMERA_UNAVAILABLE
-  if (error?.name === 'NotReadableError' || error?.name === 'AbortError') return CAMERA_STATES.CAMERA_BUSY
+  if (['NotAllowedError', 'PermissionDeniedError', 'SecurityError'].includes(error?.name)) return CAMERA_STATES.PERMISSION_DENIED
+  if (['NotFoundError', 'DevicesNotFoundError', 'OverconstrainedError'].includes(error?.name)) return CAMERA_STATES.CAMERA_UNAVAILABLE
+  if (['NotReadableError', 'TrackStartError', 'AbortError'].includes(error?.name)) return CAMERA_STATES.CAMERA_BUSY
+  if (error?.name === 'NotSupportedError') return CAMERA_STATES.BROWSER_UNSUPPORTED
   return CAMERA_STATES.CAMERA_UNAVAILABLE
 }
 
