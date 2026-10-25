@@ -20,8 +20,14 @@ export function detectCapabilities(scope = globalThis) {
 }
 
 export function chooseQualityTier(capabilities, segmentationLatencyMs = 0) {
-  if (!capabilities.worker || capabilities.hardwareConcurrency <= 2 || (capabilities.deviceMemory && capabilities.deviceMemory <= 2) || segmentationLatencyMs > 420) return 'low'
-  if (capabilities.hardwareConcurrency <= 4 || (capabilities.deviceMemory && capabilities.deviceMemory <= 4) || segmentationLatencyMs > 220) return 'medium'
+  const concurrency = Number(capabilities?.hardwareConcurrency)
+  const memory = Number(capabilities?.deviceMemory)
+  const latency = Number(segmentationLatencyMs)
+  const cores = Number.isFinite(concurrency) && concurrency > 0 ? concurrency : 1
+  const deviceMemory = Number.isFinite(memory) && memory > 0 ? memory : null
+  const measuredLatency = Number.isFinite(latency) && latency >= 0 ? latency : Number.POSITIVE_INFINITY
+  if (!capabilities?.worker || cores <= 2 || (deviceMemory && deviceMemory <= 2) || measuredLatency > 420) return 'low'
+  if (cores <= 4 || (deviceMemory && deviceMemory <= 4) || measuredLatency > 220) return 'medium'
   return 'high'
 }
 

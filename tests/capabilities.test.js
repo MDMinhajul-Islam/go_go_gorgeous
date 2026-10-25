@@ -7,6 +7,21 @@ test('low capability devices choose a conservative tier', () => {
   assert.equal(chooseQualityTier({ worker: true, hardwareConcurrency: 2, deviceMemory: 8 }), 'low')
 })
 
+test('quality tiers honor device and latency thresholds', () => {
+  const capable = { worker: true, hardwareConcurrency: 8, deviceMemory: 8 }
+  assert.equal(chooseQualityTier(capable, 220), 'high')
+  assert.equal(chooseQualityTier(capable, 221), 'medium')
+  assert.equal(chooseQualityTier(capable, 421), 'low')
+  assert.equal(chooseQualityTier({ ...capable, hardwareConcurrency: 4 }), 'medium')
+  assert.equal(chooseQualityTier({ ...capable, deviceMemory: 2 }), 'low')
+})
+
+test('quality selection treats missing or malformed measurements conservatively', () => {
+  assert.equal(chooseQualityTier(undefined), 'low')
+  assert.equal(chooseQualityTier({ worker: true, hardwareConcurrency: Number.NaN, deviceMemory: 8 }), 'low')
+  assert.equal(chooseQualityTier({ worker: true, hardwareConcurrency: 8, deviceMemory: 8 }, Number.NaN), 'low')
+})
+
 test('capability detection is safe without browser globals', () => {
   const result = detectCapabilities({})
   assert.equal(result.camera, false)
