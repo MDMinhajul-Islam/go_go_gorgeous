@@ -2,6 +2,8 @@ export const LAYER_ORDER = ['concealer', 'eyeliner', 'lipstick']
 
 export function createLayer(product, shade, intensity = 82) {
   if (!product || !shade) throw new TypeError('A product and shade are required')
+  if (!LAYER_ORDER.includes(product.category)) throw new RangeError('Unsupported cosmetic category')
+  if (!product.variants?.some(variant => variant.id === shade.id)) throw new RangeError('Shade does not belong to product')
   return {
     category: product.category,
     productId: product.id,

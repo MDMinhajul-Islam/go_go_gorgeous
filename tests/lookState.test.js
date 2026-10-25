@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { products } from '../src/catalog/catalog.js'
-import { orderedLookLayers, removeLookLayer, toggleLookLayer, updateLookLayer, upsertLookLayer } from '../src/try-on/state/lookState.js'
+import { createLayer, orderedLookLayers, removeLookLayer, toggleLookLayer, updateLookLayer, upsertLookLayer } from '../src/try-on/state/lookState.js'
 
 const lipstick = products.find(product => product.category === 'lipstick')
 const eyeliner = products.find(product => product.category === 'eyeliner')
@@ -20,6 +20,11 @@ test('replacing lipstick does not remove eyeliner', () => {
   look = upsertLookLayer(look, secondLipstick, secondLipstick.shades[1])
   assert.equal(look.lipstick.productId, secondLipstick.id)
   assert.equal(look.eyeliner.productId, eyeliner.id)
+})
+
+test('layer creation rejects mismatched product and shade identities', () => {
+  assert.throws(() => createLayer(lipstick, eyeliner.shades[0]), /does not belong/)
+  assert.throws(() => createLayer({ ...lipstick, category: 'foundation' }, lipstick.shades[0]), /Unsupported/)
 })
 
 test('layers toggle, update and remove independently', () => {
