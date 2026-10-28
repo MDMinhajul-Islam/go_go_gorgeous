@@ -16,3 +16,5 @@ This setup uses Cloudflare Pages and its Pages Function only. It does not create
 Pull requests and other branches run CI and the Docker image build but do not deploy. The model proxy points to this repository's `main` branch; its browser cache lifetime is one hour. For local Docker, run `docker compose up --build` and open `http://localhost:8080`.
 
 The try-on model and camera flow are client-side. Use HTTPS (the Pages URL does) and make sure the browser grants camera permission. The face-parsing model is served from this repository, so that public GitHub source must remain available for the endpoint to work.
+
+The Pages Function converts upstream network and server failures to a generic `502` response without exposing repository or transport details. It preserves `404`, `416`, range metadata, validators and bodyless `HEAD`/`304` semantics so browsers can cache and resume the large model safely.

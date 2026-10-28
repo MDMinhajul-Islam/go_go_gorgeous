@@ -12,19 +12,27 @@ export async function onRequest({ request }) {
     if (value) upstreamHeaders.set(header, value);
   }
 
-  const upstream = await fetch(MODEL_URL, { method: request.method, headers: upstreamHeaders });
   const headers = new Headers({
     'Cache-Control': 'public, max-age=3600, must-revalidate',
     'Content-Type': 'application/octet-stream',
     'X-Content-Type-Options': 'nosniff',
   });
+  let upstream;
+  try {
+    upstream = await fetch(MODEL_URL, { method: request.method, headers: upstreamHeaders });
+  } catch {
+    return new Response(request.method === 'HEAD' ? null : 'Face model temporarily unavailable', {
+      status: 502,
+      headers,
+    });
+  }
   for (const header of ['Accept-Ranges', 'Content-Length', 'Content-Range', 'ETag', 'Last-Modified']) {
     const value = upstream.headers.get(header);
     if (value) headers.set(header, value);
   }
 
   if (!upstream.ok && upstream.status !== 304) {
-    return new Response('Face model temporarily unavailable', {
+    return new Response(request.method === 'HEAD' ? null : 'Face model temporarily unavailable', {
       status: upstream.status === 404 ? 404 : upstream.status === 416 ? 416 : 502,
       headers,
     });
