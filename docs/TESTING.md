@@ -23,3 +23,5 @@ Tests cover strict cart quantity and persistence sanitization, duplicate SKU mer
 For each browser test permission deny/retry, no camera, low light, blink, smile, glasses, medium yaw, tab background/foreground, portrait/landscape rotation, repeated open/close, rapid mode/product switching and a 10-minute memory soak. Confirm the camera indicator disappears immediately on close.
 
 Visual validation must use licensed/consented fixtures across a representative range of skin tones. Verify lipstick inner-mouth exclusion and eyeliner left/right wing direction. Camera behavior cannot be certified from a headless build alone.
+
+Use [`VISUAL_REGRESSION.md`](VISUAL_REGRESSION.md) for the exact upload, capture and 10-minute diagnostics procedure. Add `?diagnostics=1` only during local validation; the panel retains timing/count data, never images, landmarks or masks.
