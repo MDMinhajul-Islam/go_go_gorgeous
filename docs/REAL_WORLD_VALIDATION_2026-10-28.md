@@ -106,11 +106,11 @@ The full evidence table is `ASSET_RIGHTS_EVIDENCE.md`.
 ### Final local gate
 
 - `pnpm install --frozen-lockfile`: pass
-- `pnpm test`: pass, 54 tests
+- `pnpm test`: pass, 55 tests
 - `pnpm verify:assets`: pass
 - `pnpm build`: pass
-- `pnpm check:bundle`: pass; initial JS 192.34 KiB / 219.73 KiB, worker 72.79 KiB / 488.28 KiB (measurement before the final tiny accessibility/font CSS delta; final rerun required in the delivery gate)
-- `pnpm audit --prod`: pass, 0 known vulnerabilities in the baseline run; final rerun required in the delivery gate
+- `pnpm check:bundle`: pass; initial JS 192.36 KiB / 219.73 KiB, worker 72.79 KiB / 488.28 KiB
+- `pnpm audit --prod`: pass, 0 known vulnerabilities
 - Docker: not rerun because no container/deployment files changed
 
 ## Recommendation
