@@ -1,5 +1,6 @@
 import * as ort from 'onnxruntime-web/wasm'
 import { computeLetterbox } from './try-on/core/geometry.js'
+import { createClassAlpha, writeAlphaChannel } from './try-on/core/maskMath.js'
 
 const SIZE = 512
 const MEAN = [0.485, 0.456, 0.406]
@@ -63,16 +64,14 @@ export class FaceParser {
   }
 }
 
-export function createClassMask(segmentation, classIds, feather = 1) {
+export function createClassMask(segmentation, classIds, feather = 1, excludedClassIds = []) {
   if (!segmentation) return null
   const { labels, width, height, content = { x: 0, y: 0, width, height } } = segmentation
-  const accepted = new Set(classIds)
   const hard = document.createElement('canvas')
   hard.width = width; hard.height = height
   const ctx = hard.getContext('2d')
   const image = ctx.createImageData(width, height)
-  for (let i = 0; i < labels.length; i++) if (accepted.has(labels[i])) image.data[i * 4 + 3] = 255
-  ctx.putImageData(image, 0, 0)
+  ctx.putImageData(writeAlphaChannel(image, createClassAlpha(labels, classIds, excludedClassIds)), 0, 0)
   const crop = canvas => {
     const result = document.createElement('canvas')
     result.width = Math.max(1, Math.round(content.width)); result.height = Math.max(1, Math.round(content.height))
