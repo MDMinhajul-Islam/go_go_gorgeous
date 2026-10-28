@@ -96,3 +96,8 @@ export function concealerRegion(landmarks, [outerId, innerId, cheekId], width, h
     rotation: Math.atan2(innerPoint.y - outerPoint.y, innerPoint.x - outerPoint.x),
   }
 }
+
+export function illuminationOpacity(red, green, blue) {
+  const luminance = (.2126 * red + .7152 * green + .0722 * blue) / 255
+  return clamp(.74 + Math.abs(luminance - .5) * .34, .74, .91)
+}

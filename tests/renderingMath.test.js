@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   adaptiveFeatherPixels, captureRenderAnchors, concealerRegion, eyeStrokeGeometry,
-  isSegmentationCompatible, lipstickProfile, smoothLandmarks,
+  illuminationOpacity, isSegmentationCompatible, lipstickProfile, smoothLandmarks,
 } from '../src/try-on/core/renderingMath.js'
 
 const landmarks = Array.from({ length: 468 }, () => ({ x: .5, y: .5, z: 0 }))
@@ -68,4 +68,10 @@ test('concealer region follows the eye angle and remains under-eye centered', ()
   assert.ok(region.center.y > ((landmarks[33].y + landmarks[133].y) / 2) * 800)
   assert.ok(region.radiusX > region.radiusY)
   assert.ok(region.rotation > 0)
+})
+
+test('concealer opacity adapts gently to local illumination', () => {
+  assert.ok(Math.abs(illuminationOpacity(128, 128, 128) - .74) < .001)
+  assert.ok(illuminationOpacity(10, 10, 10) > illuminationOpacity(128, 128, 128))
+  assert.ok(illuminationOpacity(245, 245, 245) <= .91)
 })
