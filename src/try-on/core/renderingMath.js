@@ -5,8 +5,8 @@ export const RENDER_ANCHORS = Object.freeze([33, 133, 263, 362, 61, 291, 13, 14]
 export function lipstickProfile(finish = 'matte', intensity = 82) {
   const amount = clamp(Number(intensity) / 100 || 0, 0, 1)
   return finish === 'satin'
-    ? { colorAlpha: .44 * amount, multiplyAlpha: .34 * amount, highlightAlpha: .2 * amount, featherScale: 1.15 }
-    : { colorAlpha: .35 * amount, multiplyAlpha: .56 * amount, highlightAlpha: .06 * amount, featherScale: .9 }
+    ? { coverageAlpha: .32 * amount, colorAlpha: .64 * amount, multiplyAlpha: .12 * amount, highlightAlpha: .08 * amount, featherScale: 1.1 }
+    : { coverageAlpha: .36 * amount, colorAlpha: .6 * amount, multiplyAlpha: .24 * amount, highlightAlpha: .02 * amount, featherScale: .9 }
 }
 
 export function adaptiveFeatherPixels(faceWidthPixels, qualityTier = 'high') {
@@ -81,7 +81,7 @@ export function eyeStrokeGeometry(landmarks, spec, width, height, intensity = 1)
   const blinkAlpha = clamp((openness - .028) / .075, 0, 1)
   if (blinkAlpha <= .02) return null
   const amount = clamp(intensity, 0, 1)
-  const baseWidth = clamp(eyeWidth * .038, 1.1, 5) * (.72 + amount * .28)
+  const baseWidth = clamp(eyeWidth * .052, 1.45, 6.2) * (.76 + amount * .24)
   const segments = points.slice(0, -1).map((point, index) => ({
     from: { x: point.x * width, y: point.y * height },
     to: { x: points[index + 1].x * width, y: points[index + 1].y * height },
@@ -91,13 +91,13 @@ export function eyeStrokeGeometry(landmarks, spec, width, height, intensity = 1)
   let normalX = axisY, normalY = -axisX
   if (normalY > 0) { normalX *= -1; normalY *= -1 }
   const perspective = clamp(1 - Math.abs((outer.z || 0) - (inner.z || 0)) * 2.4, .62, 1)
-  const wingLength = eyeWidth * .24 * perspective
+  const wingLength = eyeWidth * .27 * perspective
   const wingStart = { x: outer.x * width, y: outer.y * height }
   const wingTip = {
     x: wingStart.x + axisX * wingLength + normalX * wingLength * .36,
     y: wingStart.y + axisY * wingLength + normalY * wingLength * .36,
   }
-  return { segments, wingStart, wingTip, wingWidth: baseWidth * .68, alpha: blinkAlpha * (.62 + amount * .38) }
+  return { segments, wingStart, wingTip, wingWidth: baseWidth * .72, alpha: blinkAlpha * (.74 + amount * .26) }
 }
 
 export function concealerRegion(landmarks, [outerId, innerId, cheekId], width, height) {
@@ -111,8 +111,8 @@ export function concealerRegion(landmarks, [outerId, innerId, cheekId], width, h
   const midpoint = { x: (outerPoint.x + innerPoint.x) / 2, y: (outerPoint.y + innerPoint.y) / 2 }
   return {
     center: { x: midpoint.x * .72 + cheekPoint.x * .28, y: midpoint.y * .72 + cheekPoint.y * .28 },
-    radiusX: eyeWidth * .58,
-    radiusY: eyeWidth * .23,
+    radiusX: eyeWidth * .64,
+    radiusY: eyeWidth * .28,
     rotation: Math.atan2(innerPoint.y - outerPoint.y, innerPoint.x - outerPoint.x),
   }
 }

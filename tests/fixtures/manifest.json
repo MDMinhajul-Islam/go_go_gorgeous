@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "id": "synthetic-frontal-neutral",
+      "file": "synthetic-frontal-neutral.png",
+      "sha256": "B0E5524FABAA93CEEBF4E1A4CB64A5CAEF022EA5FCA79443D2EA0BEBE373D6CE",
+      "source": "OpenAI built-in image generation",
+      "generatedOn": "2026-10-28",
+      "subject": "Fictional adult; generated for engineering validation and not intended to represent a real person",
+      "personConsent": "Not applicable to a fictional generated subject; commercial-use review remains a human legal decision",
+      "usage": "Internal upload and visual-regression engineering only",
+      "prompt": "Photorealistic but clearly synthetic fictional adult woman; direct front-facing head-and-shoulders portrait; neutral expression; eyes open; lips gently closed; no makeup or glasses; hair pulled away from the face; plain warm-gray studio background; soft even frontal lighting; one unobstructed face; no text, logo or watermark."
+    }
+  ]
+}

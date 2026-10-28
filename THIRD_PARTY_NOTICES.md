@@ -13,7 +13,7 @@ This inventory is an engineering review, not legal advice. Entries marked **Requ
 | `yakhyo/face-parsing` code | GitHub repository, MIT | MIT | BiSeNet/ResNet18 implementation lineage | Not directly copied beyond model contract | Cleared for repository code |
 | Face-parsing ResNet18 ONNX weights | upstream release `v0.0.1` | Weight-specific grant not independently located | Semantic face masks | Redistributed locally | **Requires confirmation** |
 | CelebAMask-HQ | upstream training-data lineage | Separate dataset terms | Training provenance only | Dataset not shipped | **Requires confirmation** |
-| Google Fonts: DM Sans, Playfair Display | Google Fonts | OFL-1.1 per font metadata; verify bundled/version metadata | Typography | Loaded from Google at runtime | Requires privacy/deployment decision |
+| Fonts | System font stacks | Platform-provided | Typography | No font files redistributed and no runtime font service | Cleared for current build |
 | Five sample-model images | repository assets; provenance not recorded | Unknown | Sample Try-On | Redistributed | **Must not ship commercially until cleared** |
 | Third-party cosmetic brand names | HUDA BEAUTY, MAC, e.l.f., MAYBELLINE, NYX, SHEGLAM | Trademark/product-data rights are separate from software licensing | Demo catalog | Displayed in UI | **Requires authorization or replacement** |
 

@@ -104,6 +104,9 @@ export class MakeupRenderer {
     ctx.save()
     ctx.filter = `blur(${adaptiveFeatherPixels(Math.abs(landmarks[291].x - landmarks[61].x) * width)}px)`
     ctx.fillStyle = shade
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = profile.coverageAlpha
+    path(); ctx.fill('evenodd')
     ctx.globalCompositeOperation = 'multiply'
     ctx.globalAlpha = profile.multiplyAlpha
     path(); ctx.fill('evenodd')
@@ -120,6 +123,7 @@ export class MakeupRenderer {
     const feather = adaptiveFeatherPixels(faceWidth, qualityTier) * profile.featherScale
     const mask = labels && this.mask([labels.upperLip, labels.lowerLip], feather, [labels.innerMouth])
     if (!mask) return this.drawLipFallback(ctx, landmarks, width, height, shade.c, profile)
+    this.paintMaskedColor(ctx, mask, shade.c, profile.coverageAlpha, width, height, 'source-over')
     this.paintMaskedColor(ctx, mask, shade.c, profile.multiplyAlpha, width, height, 'multiply')
     this.paintMaskedColor(ctx, mask, shade.c, profile.colorAlpha, width, height, 'color')
     if (profile.highlightAlpha > 0) {
@@ -168,26 +172,26 @@ export class MakeupRenderer {
   }
 
   drawConcealer(ctx, landmarks, width, height, shade, intensity) {
-    const { canvas, ctx: layer } = this.buffer('concealer', width, height)
     const amount = Math.max(0, Math.min(1, intensity / 100))
     for (const spec of UNDER_EYES) {
       const region = concealerRegion(landmarks, spec, width, height)
       if (!region) continue
-      const illumination = this.sampleIllumination(ctx, region)
-      layer.save(); layer.translate(region.center.x, region.center.y); layer.rotate(region.rotation)
-      layer.scale(1, region.radiusY / region.radiusX)
-      const gradient = layer.createRadialGradient(0, 0, region.radiusX * .08, 0, 0, region.radiusX)
-      gradient.addColorStop(0, colorWithAlpha(shade.c, .6 * illumination))
-      gradient.addColorStop(.45, colorWithAlpha(shade.c, .34 * illumination))
-      gradient.addColorStop(.78, colorWithAlpha(shade.c, .12 * illumination))
-      gradient.addColorStop(1, colorWithAlpha(shade.c, 0))
-      layer.fillStyle = gradient; layer.beginPath(); layer.arc(0, 0, region.radiusX, 0, Math.PI * 2); layer.fill(); layer.restore()
+      // Reading pixels back from the composited preview synchronously flushes the GPU.
+      // Soft-light already retains local luminance, so use a neutral bounded opacity.
+      const illumination = .82
+      ctx.save(); ctx.translate(region.center.x, region.center.y); ctx.rotate(region.rotation)
+      ctx.scale(1, region.radiusY / region.radiusX)
+      for (const [blend, alpha] of [['soft-light', .46 + amount * .28], ['color', .18 + amount * .14], ['source-over', .16 + amount * .12]]) {
+        const gradient = ctx.createRadialGradient(0, 0, region.radiusX * .08, 0, 0, region.radiusX)
+        gradient.addColorStop(0, colorWithAlpha(shade.c, .6 * illumination))
+        gradient.addColorStop(.45, colorWithAlpha(shade.c, .34 * illumination))
+        gradient.addColorStop(.78, colorWithAlpha(shade.c, .12 * illumination))
+        gradient.addColorStop(1, colorWithAlpha(shade.c, 0))
+        ctx.globalCompositeOperation = blend; ctx.globalAlpha = alpha; ctx.fillStyle = gradient
+        ctx.beginPath(); ctx.arc(0, 0, region.radiusX, 0, Math.PI * 2); ctx.fill()
+      }
+      ctx.restore()
     }
-    const labels = this.faceModule?.FACE_LABELS
-    const skinMask = labels && this.mask([labels.skin], 1.5)
-    if (skinMask) { layer.globalCompositeOperation = 'destination-in'; layer.save(); this.drawAligned(layer, skinMask, width, height); layer.restore() }
-    ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = .42 + amount * .28; ctx.drawImage(canvas, 0, 0)
-    ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = .08 + amount * .1; ctx.drawImage(canvas, 0, 0); ctx.restore()
   }
 
   render(ctx, landmarks, width, height, layers, { qualityTier = 'high', debugMask = false } = {}) {
