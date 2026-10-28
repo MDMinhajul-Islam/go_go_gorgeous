@@ -55,6 +55,7 @@ Only catalog/cart state is persisted. Face frames, uploads, landmarks and masks 
 - [Security](docs/SECURITY.md)
 - [Model and runtime inventory](docs/MODELS.md)
 - [License audit](docs/LICENSE_AUDIT.md)
+- [Integration validation — 2026-10-28](docs/INTEGRATION_VALIDATION_2026-10-28.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 - [Accessibility](docs/ACCESSIBILITY.md)
 - [Performance](docs/PERFORMANCE.md)

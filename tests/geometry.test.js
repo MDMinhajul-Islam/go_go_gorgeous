@@ -12,4 +12,8 @@ test('portrait source is horizontally letterboxed without distortion', () => {
 
 test('invalid dimensions fail explicitly', () => {
   assert.throws(() => computeLetterbox(0, 100), RangeError)
+  assert.throws(() => computeLetterbox(Number.NaN, 100), /finite positive/)
+  assert.throws(() => computeLetterbox(100, Number.POSITIVE_INFINITY), /finite positive/)
+  assert.throws(() => computeLetterbox(100, 100, Number.NEGATIVE_INFINITY, 512), /finite positive/)
+  assert.throws(() => computeLetterbox('100', 100), /finite positive/)
 })

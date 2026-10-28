@@ -8,6 +8,10 @@ test('camera permission errors are classified', () => {
   assert.equal(cameraErrorState({ name: 'NotAllowedError' }), CAMERA_STATES.PERMISSION_DENIED)
   assert.equal(cameraErrorState({ name: 'NotReadableError' }), CAMERA_STATES.CAMERA_BUSY)
   assert.equal(cameraErrorState({ name: 'NotFoundError' }), CAMERA_STATES.CAMERA_UNAVAILABLE)
+  assert.equal(cameraErrorState({ name: 'PermissionDeniedError' }), CAMERA_STATES.PERMISSION_DENIED)
+  assert.equal(cameraErrorState({ name: 'DevicesNotFoundError' }), CAMERA_STATES.CAMERA_UNAVAILABLE)
+  assert.equal(cameraErrorState({ name: 'TrackStartError' }), CAMERA_STATES.CAMERA_BUSY)
+  assert.equal(cameraErrorState({ name: 'NotSupportedError' }), CAMERA_STATES.BROWSER_UNSUPPORTED)
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: previous })
 })
 
@@ -35,6 +39,20 @@ test('camera permission errors do not trigger a second camera request', async ()
   await assert.rejects(requestCameraStream(mediaDevices), { name: 'NotAllowedError' })
   assert.equal(calls, 1)
   assert.match(CAMERA_COPY[CAMERA_STATES.CAMERA_UNAVAILABLE], /browser and device settings/i)
+})
+
+test('missing camera APIs fail with a classifiable unsupported error', async () => {
+  const previous = globalThis.navigator
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {} })
+  try {
+    await assert.rejects(requestCameraStream(undefined), error => {
+      assert.equal(error.name, 'NotSupportedError')
+      assert.equal(cameraErrorState(error), CAMERA_STATES.BROWSER_UNSUPPORTED)
+      return true
+    })
+  } finally {
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: previous })
+  }
 })
 
 test('camera error message exposes the browser error name for troubleshooting', () => {

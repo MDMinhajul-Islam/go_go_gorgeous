@@ -19,13 +19,19 @@ export const CAMERA_STATES = Object.freeze({
 
 export function cameraErrorState(error) {
   if (!globalThis.navigator?.mediaDevices?.getUserMedia) return CAMERA_STATES.BROWSER_UNSUPPORTED
-  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') return CAMERA_STATES.PERMISSION_DENIED
-  if (error?.name === 'NotFoundError' || error?.name === 'OverconstrainedError') return CAMERA_STATES.CAMERA_UNAVAILABLE
-  if (error?.name === 'NotReadableError' || error?.name === 'AbortError') return CAMERA_STATES.CAMERA_BUSY
+  if (['NotAllowedError', 'PermissionDeniedError', 'SecurityError'].includes(error?.name)) return CAMERA_STATES.PERMISSION_DENIED
+  if (['NotFoundError', 'DevicesNotFoundError', 'OverconstrainedError'].includes(error?.name)) return CAMERA_STATES.CAMERA_UNAVAILABLE
+  if (['NotReadableError', 'TrackStartError', 'AbortError'].includes(error?.name)) return CAMERA_STATES.CAMERA_BUSY
+  if (error?.name === 'NotSupportedError') return CAMERA_STATES.BROWSER_UNSUPPORTED
   return CAMERA_STATES.CAMERA_UNAVAILABLE
 }
 
 export async function requestCameraStream(mediaDevices) {
+  if (typeof mediaDevices?.getUserMedia !== 'function') {
+    const error = new Error('Camera API unavailable')
+    error.name = 'NotSupportedError'
+    throw error
+  }
   try {
     return await mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },

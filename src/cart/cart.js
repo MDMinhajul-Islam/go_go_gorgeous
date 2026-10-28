@@ -2,14 +2,29 @@ import { getProduct, getVariant } from '../catalog/catalog.js'
 
 export const CART_STORAGE_KEY = 'go-go-gorgeous:cart:v1'
 
+function normalizeQuantity(value, { allowZero = false } = {}) {
+  if (value === '' || value === null || value === undefined) return allowZero ? 0 : 1
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return allowZero ? 0 : 1
+  const quantity = Math.trunc(numeric)
+  if (quantity <= 0) return allowZero ? 0 : 1
+  return Math.min(99, quantity)
+}
+
 export function sanitizeCart(value) {
   if (!Array.isArray(value)) return []
-  return value.flatMap(item => {
+  const sanitized = value.flatMap(item => {
     const product = getProduct(item?.productId)
     const variant = getVariant(product, item?.variantId)
-    const quantity = Math.max(1, Math.min(99, Number.parseInt(item?.quantity, 10) || 1))
+    const quantity = normalizeQuantity(item?.quantity)
     return product && variant ? [{ productId: product.id, variantId: variant.id, quantity }] : []
   })
+  return sanitized.reduce((items, item) => {
+    const existing = items.find(candidate => candidate.productId === item.productId && candidate.variantId === item.variantId)
+    if (existing) existing.quantity = Math.min(99, existing.quantity + item.quantity)
+    else items.push({ ...item })
+    return items
+  }, [])
 }
 
 export function loadCart(storage = globalThis.localStorage) {
@@ -17,7 +32,13 @@ export function loadCart(storage = globalThis.localStorage) {
 }
 
 export function saveCart(items, storage = globalThis.localStorage) {
-  try { storage?.setItem(CART_STORAGE_KEY, JSON.stringify(sanitizeCart(items))) } catch { /* storage may be unavailable */ }
+  try {
+    if (!storage?.setItem) return false
+    storage.setItem(CART_STORAGE_KEY, JSON.stringify(sanitizeCart(items)))
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function cartReducer(state, action) {
@@ -30,7 +51,7 @@ export function cartReducer(state, action) {
   }
   if (action.type === 'quantity') return state.flatMap(item => {
     if (item.productId !== action.productId || item.variantId !== action.variantId) return [item]
-    const quantity = Math.max(0, Math.min(99, Number.parseInt(action.quantity, 10) || 0))
+    const quantity = normalizeQuantity(action.quantity, { allowZero: true })
     return quantity ? [{ ...item, quantity }] : []
   })
   if (action.type === 'remove') return state.filter(item => item.productId !== action.productId || item.variantId !== action.variantId)
