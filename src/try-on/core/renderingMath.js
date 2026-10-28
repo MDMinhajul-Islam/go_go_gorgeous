@@ -35,6 +35,26 @@ export function isSegmentationCompatible(segmentation, landmarks, maxMeanDrift =
   return Boolean(segmentation?.anchors) && landmarkDrift(segmentation.anchors, landmarks) <= maxMeanDrift
 }
 
+export function segmentationAlignment(segmentation, landmarks, width, height) {
+  const previous = segmentation?.anchors
+  const current = captureRenderAnchors(landmarks)
+  if (!previous || !current || previous.length !== current.length) return null
+  const center = points => points.reduce((total, point) => ({ x: total.x + point.x, y: total.y + point.y }), { x: 0, y: 0 })
+  const from = center(previous), to = center(current)
+  from.x /= previous.length; from.y /= previous.length; to.x /= current.length; to.y /= current.length
+  const vector = points => ({ x: points[2].x - points[0].x, y: points[2].y - points[0].y })
+  const oldAxis = vector(previous), newAxis = vector(current)
+  const oldLength = Math.hypot(oldAxis.x, oldAxis.y), newLength = Math.hypot(newAxis.x, newAxis.y)
+  const scale = oldLength > 0 ? clamp(newLength / oldLength, .94, 1.06) : 1
+  const rotation = clamp(Math.atan2(newAxis.y, newAxis.x) - Math.atan2(oldAxis.y, oldAxis.x), -.08, .08)
+  return {
+    from: { x: from.x * width, y: from.y * height },
+    to: { x: to.x * width, y: to.y * height },
+    scale,
+    rotation,
+  }
+}
+
 export function smoothLandmarks(previous, detected) {
   if (!previous || previous.length !== detected?.length) return detected
   return detected.map((point, index) => {

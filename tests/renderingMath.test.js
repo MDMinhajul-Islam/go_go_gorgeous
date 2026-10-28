@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   adaptiveFeatherPixels, captureRenderAnchors, concealerRegion, eyeStrokeGeometry,
-  illuminationOpacity, isSegmentationCompatible, lipstickProfile, smoothLandmarks,
+  illuminationOpacity, isSegmentationCompatible, lipstickProfile, segmentationAlignment, smoothLandmarks,
 } from '../src/try-on/core/renderingMath.js'
 
 const landmarks = Array.from({ length: 468 }, () => ({ x: .5, y: .5, z: 0 }))
@@ -43,6 +43,15 @@ test('segmentation compatibility rejects masks captured before meaningful motion
   assert.equal(isSegmentationCompatible({ anchors }, landmarks), true)
   const moved = landmarks.map(point => ({ ...point, x: point.x + .04 }))
   assert.equal(isSegmentationCompatible({ anchors }, moved), false)
+})
+
+test('segmentation alignment follows small face translation with bounded scale', () => {
+  const anchors = captureRenderAnchors(landmarks)
+  const moved = landmarks.map(point => ({ ...point, x: point.x + .01, y: point.y - .005 }))
+  const alignment = segmentationAlignment({ anchors }, moved, 1000, 800)
+  assert.ok(Math.abs(alignment.to.x - alignment.from.x - 10) < .001)
+  assert.ok(Math.abs(alignment.to.y - alignment.from.y + 4) < .001)
+  assert.equal(alignment.scale, 1)
 })
 
 test('landmark smoothing follows large motion faster than sensor jitter', () => {

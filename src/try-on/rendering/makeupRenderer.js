@@ -1,5 +1,6 @@
 import {
   adaptiveFeatherPixels, concealerRegion, eyeStrokeGeometry, illuminationOpacity, lipstickProfile,
+  segmentationAlignment,
 } from '../core/renderingMath.js'
 
 const LIP_OUTER = [61,185,40,39,37,0,267,269,270,409,291,375,321,405,314,17,84,181,91,146]
@@ -73,8 +74,18 @@ export class MakeupRenderer {
     ctx.save()
     ctx.globalCompositeOperation = blend
     ctx.globalAlpha = alpha
-    ctx.drawImage(canvas, 0, 0, width, height)
+    this.drawAligned(ctx, canvas, width, height)
     ctx.restore()
+  }
+
+  drawAligned(ctx, canvas, width, height) {
+    const alignment = this.currentAlignment
+    if (!alignment) { ctx.drawImage(canvas, 0, 0, width, height); return }
+    ctx.translate(alignment.to.x, alignment.to.y)
+    ctx.rotate(alignment.rotation)
+    ctx.scale(alignment.scale, alignment.scale)
+    ctx.translate(-alignment.from.x, -alignment.from.y)
+    ctx.drawImage(canvas, 0, 0, width, height)
   }
 
   drawLipFallback(ctx, landmarks, width, height, shade, profile) {
@@ -121,7 +132,7 @@ export class MakeupRenderer {
       highlight.fillStyle = gradient; highlight.fillRect(0, 0, canvas.width, canvas.height)
       highlight.globalCompositeOperation = 'destination-in'; highlight.drawImage(mask, 0, 0)
       ctx.save(); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = profile.highlightAlpha
-      ctx.drawImage(canvas, 0, 0, width, height); ctx.restore()
+      this.drawAligned(ctx, canvas, width, height); ctx.restore()
     }
   }
 
@@ -174,13 +185,14 @@ export class MakeupRenderer {
     }
     const labels = this.faceModule?.FACE_LABELS
     const skinMask = labels && this.mask([labels.skin], 1.5)
-    if (skinMask) { layer.globalCompositeOperation = 'destination-in'; layer.drawImage(skinMask, 0, 0, width, height) }
+    if (skinMask) { layer.globalCompositeOperation = 'destination-in'; layer.save(); this.drawAligned(layer, skinMask, width, height); layer.restore() }
     ctx.save(); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = .42 + amount * .28; ctx.drawImage(canvas, 0, 0)
     ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = .08 + amount * .1; ctx.drawImage(canvas, 0, 0); ctx.restore()
   }
 
   render(ctx, landmarks, width, height, layers, { qualityTier = 'high', debugMask = false } = {}) {
     if (!landmarks) return
+    this.currentAlignment = segmentationAlignment(this.segmentation, landmarks, width, height)
     for (const layer of layers) {
       if (!layer.enabled) continue
       const { product, shade, intensity } = layer
@@ -191,7 +203,8 @@ export class MakeupRenderer {
     if (debugMask && this.faceModule && this.segmentation) {
       const labels = this.faceModule.FACE_LABELS
       const mask = this.mask([labels.skin, labels.upperLip, labels.lowerLip, labels.leftEye, labels.rightEye], 0)
-      if (mask) { ctx.save(); ctx.globalAlpha = .26; ctx.drawImage(mask, 0, 0, width, height); ctx.restore() }
+      if (mask) { ctx.save(); ctx.globalAlpha = .26; this.drawAligned(ctx, mask, width, height); ctx.restore() }
     }
+    this.currentAlignment = null
   }
 }
