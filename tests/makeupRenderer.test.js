@@ -60,5 +60,5 @@ test('concealer renders bounded gradients without allocating a full-frame buffer
   renderer.drawConcealer(context, landmarks, 1600, 900, { c: '#dba77e' }, 82)
 
   assert.equal(allocations, 0)
-  assert.equal(fills, 4)
+  assert.equal(fills, 6)
 })

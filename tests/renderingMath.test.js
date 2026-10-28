@@ -27,8 +27,11 @@ Object.assign(landmarks[14], { x: .5, y: .67 })
 test('lipstick finishes preserve distinct, bounded compositing profiles', () => {
   const matte = lipstickProfile('matte', 100)
   const satin = lipstickProfile('satin', 100)
+  assert.ok(matte.coverageAlpha > satin.coverageAlpha)
+  assert.ok(satin.coverageAlpha >= .3)
   assert.ok(matte.multiplyAlpha > satin.multiplyAlpha)
   assert.ok(satin.highlightAlpha > matte.highlightAlpha)
+  assert.ok(matte.colorAlpha >= .6)
   assert.equal(lipstickProfile('matte', 500).multiplyAlpha, matte.multiplyAlpha)
 })
 
@@ -66,6 +69,8 @@ test('eyeliner tapers toward the inner eye and fades closed eyes', () => {
   const spec = { upper: [33, 246, 161, 160, 159, 158, 157, 173, 133], top: 159, bottom: 145 }
   const open = eyeStrokeGeometry(landmarks, spec, 1000, 800, 1)
   assert.ok(open.segments[0].width > open.segments.at(-1).width)
+  assert.ok(open.segments[0].width >= 5)
+  assert.ok(open.alpha >= .74)
   assert.ok(open.wingTip.x < open.wingStart.x)
   const closed = landmarks.map(point => ({ ...point }))
   closed[145] = { ...closed[159] }

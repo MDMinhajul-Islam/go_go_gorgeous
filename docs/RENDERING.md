@@ -14,3 +14,5 @@ See [the v2 audit and validation record](RENDERING_V2_AUDIT.md) for verified pre
 
 See [the real-world validation report](REAL_WORLD_VALIDATION_2026-10-28.md) and [visual regression procedure](VISUAL_REGRESSION.md) for measured timings, evidence limits and the required physical matrix.
 
+See [the supplied-video validation](VIDEO_MAKEUP_VALIDATION_2026-10-28.md) for the confirmed low-visibility defect and the bounded pigment/liner/concealer tuning applied from real webcam evidence.
+
